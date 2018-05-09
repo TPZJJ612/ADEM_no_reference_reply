@@ -27,21 +27,19 @@ def get_vector_representation(tokens, mask, scope_name,
     return output_vectors
 
 
-def adem(context_vector, model_response_vector, reference_response_vector,
-         context_dim, model_response_dim, reference_response_dim,
+def adem(context_vector, model_response_vector,
+         context_dim, model_response_dim,
          human_score_place, lr, max_grad_norm):
 
-    model_score, M, N = tf_dynamic_adem_score( context = context_vector
+    model_score, M = tf_dynamic_adem_score( context = context_vector
                                               , model_response = model_response_vector
-                                              , reference_response = reference_response_vector
                                               , shape_info = {'batch_size': None
                                                               ,'ct_dim': context_dim
                                                               ,'mr_dim': model_response_dim
-                                                              ,'rr_dim': reference_response_dim
                                                               }
                                                )
 
-    loss = compute_adem_l1_loss(human_score_place, model_score, M, N)
+    loss = compute_adem_l1_loss(human_score_place, model_score, M)
 
     tvars = tf.trainable_variables()
     grads, _ = tf.clip_by_global_norm(
@@ -106,10 +104,9 @@ def adem_with_encoder_graph(
         scope_name='reference_response_encoder', reuse_embedding=True)
 
     train_op, loss, model_score = adem(
-        context_vector, model_response_vector, reference_response_vector,
+        context_vector, model_response_vector,
         context_encoder['params']['context_level_state_size'],
         model_response_encoder['params']['context_level_state_size'],
-        reference_response_encoder['params']['context_level_state_size'],
         human_score_place, lr, max_grad_norm)
 
     with tf.name_scope('new_lr'):
@@ -122,7 +119,7 @@ def adem_with_encoder_graph(
         human_score_place, new_lr_place, train_op, loss, model_score, lr_update
 
 
-def adem_graph(context_dim, model_response_dim, reference_response_dim,
+def adem_graph(context_dim, model_response_dim,
                learning_rate=0.1, max_grad_norm=5):
 
     with tf.name_scope('input_placeholder'):
@@ -134,10 +131,10 @@ def adem_graph(context_dim, model_response_dim, reference_response_dim,
                                               , shape=[None, model_response_dim]
                                               , name='model_response_place'
                                               )
-        reference_response_place = tf.placeholder(dtype=tf.int32
-                                                  , shape = [None, reference_response_dim]
-                                                  , name='reference_response_place'
-                                                  )
+        # reference_response_place = tf.placeholder(dtype=tf.int32
+        #                                           , shape = [None, reference_response_dim]
+        #                                           , name='reference_response_place'
+        #                                           )
         human_score_place = tf.placeholder(dtype = tf.float32
                                            , shape=[None]
                                            , name='human_score_place'
@@ -154,10 +151,8 @@ def adem_graph(context_dim, model_response_dim, reference_response_dim,
 
     train_op, loss, model_score = adem(context_place
                                        , model_response_place
-                                       , reference_response_place
                                        , context_dim
                                        , model_response_dim
-                                       , reference_response_dim
                                        , human_score_place
                                        , lr
                                        , max_grad_norm
@@ -172,7 +167,6 @@ def adem_graph(context_dim, model_response_dim, reference_response_dim,
 
     return context_place\
         , model_response_place\
-        , reference_response_place\
         , human_score_place\
         , new_lr_place\
         , train_op\

@@ -117,7 +117,6 @@ with tf.Graph().as_default():
 
         model = ADEM( context_dim
                      , model_response_dim
-                     , reference_response_dim
                      , learning_rate
                      , max_grad_norm
                      )
@@ -143,7 +142,6 @@ with tf.Graph().as_default():
                   sess
                 , context = x_batch
                 , model_response = x_batch
-                , reference_response = x_batch
                 , human_score = y_batch
             )
             current_step = tf.train.global_step(sess, global_step)

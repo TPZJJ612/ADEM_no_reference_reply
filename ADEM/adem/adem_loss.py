@@ -9,15 +9,15 @@ def matrix_l1_norm(matrix):
     return tf.reduce_sum(row_max)
 
 
-def compute_adem_l1_loss(human_score, model_score, M, N):
+def compute_adem_l1_loss(human_score, model_score, M):
     [human_score, model_score] = cast_to_float32([human_score, model_score])
     loss = tf.reduce_sum(tf.square(human_score - model_score))
-    regularization = matrix_l1_norm(M) + matrix_l1_norm(N)
+    regularization = matrix_l1_norm(M)
     gamma = tf.constant(0.3, name='gamma')
     return loss + (gamma * regularization)
 
 
-def tf_static_adem_l1_loss(human_score, model_score, M, N):
+def tf_static_adem_l1_loss(human_score, model_score, M):
     hs_shape = human_score.get_shape().as_list()
     ms_shape = model_score.get_shape().as_list()
     with tf.control_dependencies(
@@ -25,4 +25,4 @@ def tf_static_adem_l1_loss(human_score, model_score, M, N):
          tf.assert_equal(len(ms_shape), 1, message='score should be 1D.'),
          tf.assert_equal(hs_shape, ms_shape,
                          message='human and model scores should have an equal amount.')]):
-        return compute_adem_l1_loss(human_score, model_score, M, N)
+        return compute_adem_l1_loss(human_score, model_score, M)
